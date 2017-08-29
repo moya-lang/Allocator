@@ -155,7 +155,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Allocator\Allocator.h" />
-    <ClInclude Include="Examples\List\List.h" />
+    <ClInclude Include="Examples\Performance\Performance.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
