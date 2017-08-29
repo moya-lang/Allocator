@@ -12,6 +12,10 @@
 
 #include "Allocator.h"
 
+const std::size_t growSize = 1024;
+const int numberOfIterations = 1024;
+const int randomRange = 1024;
+
 class PerformanceTimer
 {
     std::chrono::high_resolution_clock::time_point from, to;
@@ -34,148 +38,143 @@ class PerformanceTimer
         }
 };
 
+template <typename Container>
+class PerformanceTest
+{
+    virtual void testIteration(int newSize) = 0;
+
+
+    protected:
+
+        int size = 0;
+        Container container;
+
+        std::default_random_engine randomNumberGenerator;
+        std::uniform_int_distribution<int> randomNumberDistribution;
+
+
+    public:
+
+        PerformanceTest() :
+            randomNumberGenerator(0),
+            randomNumberDistribution(0, randomRange)
+        {
+        }
+
+        double run()
+        {
+            PerformanceTimer timer;
+            timer.start();
+
+            for (int i = 0; i < numberOfIterations; i++)
+                testIteration(randomNumberDistribution(randomNumberGenerator));
+
+            timer.stop();
+            return timer.toSeconds();
+        }
+};
+
+template <typename Container>
+class PushFrontTest : public PerformanceTest<Container>
+{
+    virtual void testIteration(int newSize)
+    {
+        while (size < newSize)
+            container.push_front(size++);
+
+        for (; size > newSize; size--)
+            container.pop_front();
+    }
+};
+
+template <typename Container>
+class PushBackTest : public PerformanceTest<Container>
+{
+    virtual void testIteration(int newSize)
+    {
+        while (size < newSize)
+            container.push_back(size++);
+
+        for (; size > newSize; size--)
+            container.pop_back();
+    }
+};
+
+template <typename Container>
+class MapTest : public PerformanceTest<Container>
+{
+    virtual void testIteration(int newSize)
+    {
+        while (size < newSize)
+            container.insert(std::pair<char, int>(size++, size));
+
+        while (size > newSize)
+            container.erase(--size);
+    }
+};
+
+template <typename Container>
+class SetTest : public PerformanceTest<Container>
+{
+    virtual void testIteration(int newSize)
+    {
+        while (size < newSize)
+            container.insert(size++);
+
+        while (size > newSize)
+            container.erase(--size);
+    }
+};
+
 class Performance
 {
-    static const std::size_t growSize = 1024;
-    static const int randomRange = 16 * 1024;
-    static const int numberOfIterations = 1024;
-
-    template <typename Container>
-    double pushBackTest()
+    template <typename StlContainer, typename FastContainer>
+    void printTestStatus(const char *name, StlContainer &stlContainer, FastContainer &fastContainer)
     {
-        int size = 0;
-        Container container;
-
-        std::default_random_engine engine(0);
-        std::uniform_int_distribution<int> distribution(0, randomRange);
-
-        PerformanceTimer timer;
-        timer.start();
-
-        for (int i = 0; i < numberOfIterations; i++) {
-            int randomSize = distribution(engine);
-
-            while (size < randomSize)
-                container.push_back(size++);
-
-            for (; size > randomSize; size--)
-                container.pop_back();
-        }
-
-        timer.stop();
-        return timer.toSeconds();
+        std::cout << name << " - Default STL Allocator : " << std::fixed << stlContainer.run() << " seconds." << std::endl;
+        std::cout << name << " - Memory Pool Allocator : " << std::fixed << fastContainer.run() << " seconds." << std::endl;
+        std::cout << std::endl;
     }
 
-    template <typename Container>
-    double pushFrontTest()
+    void runTests()
     {
-        int size = 0;
-        Container container;
+        typedef int DataType;
+        typedef Moya::Allocator<DataType, growSize> MemoryPoolAllocator;
 
-        std::default_random_engine engine(0);
-        std::uniform_int_distribution<int> distribution(0, randomRange);
+        PushFrontTest<std::forward_list<DataType>> pushFrontForwardListTestStl;
+        PushFrontTest<std::forward_list<DataType, MemoryPoolAllocator>> pushFrontForwardListTestFast;
+        printTestStatus("ForwardList PushFront", pushFrontForwardListTestStl, pushFrontForwardListTestFast);
 
-        PerformanceTimer timer;
-        timer.start();
+        PushFrontTest<std::list<DataType>> pushFrontListTestStl;
+        PushFrontTest<std::list<DataType, MemoryPoolAllocator>> pushFrontListTestFast;
+        printTestStatus("List PushFront", pushFrontListTestStl, pushFrontListTestFast);
 
-        for (int i = 0; i < numberOfIterations; i++) {
-            int randomSize = distribution(engine);
+        PushBackTest<std::list<DataType>> pushBackListTestStl;
+        PushBackTest<std::list<DataType, MemoryPoolAllocator>> pushBackListTestFast;
+        printTestStatus("List PushBack", pushBackListTestStl, pushBackListTestFast);
 
-            while (size < randomSize)
-                container.push_front(size++);
+        MapTest<std::map<DataType, DataType, std::less<DataType>>> mapTestStl;
+        MapTest<std::map<DataType, DataType, std::less<DataType>, MemoryPoolAllocator>> mapTestFast;
+        printTestStatus("Map", mapTestStl, mapTestFast);
 
-            for (; size > randomSize; size--)
-                container.pop_front();
-        }
-
-        timer.stop();
-        return timer.toSeconds();
-    }
-
-    template <typename Container>
-    double setTest()
-    {
-        int size = 0;
-        Container container;
-
-        std::default_random_engine engine(0);
-        std::uniform_int_distribution<int> distribution(0, randomRange);
-
-        PerformanceTimer timer;
-        timer.start();
-
-        for (int i = 0; i < numberOfIterations; i++) {
-            int randomSize = distribution(engine);
-
-            while (size < randomSize)
-                container.insert(size++);
-
-            while (size > randomSize)
-                container.erase(--size);
-        }
-
-        timer.stop();
-        return timer.toSeconds();
-    }
-
-    template <typename Container>
-    double mapTest()
-    {
-        int size = 0;
-        Container container;
-
-        std::default_random_engine engine(0);
-        std::uniform_int_distribution<int> distribution(0, randomRange);
-
-        PerformanceTimer timer;
-        timer.start();
-
-        for (int i = 0; i < numberOfIterations; i++) {
-            int randomSize = distribution(engine);
-
-            while (size < randomSize)
-                container.insert(std::pair<char, int>(size++, size));
-
-            while (size > randomSize)
-                container.erase(--size);
-        }
-
-        timer.stop();
-        return timer.toSeconds();
+        SetTest<std::set<DataType, std::less<DataType>>> setTestStl;
+        SetTest<std::set<DataType, std::less<DataType>, MemoryPoolAllocator>> setTestFast;
+        printTestStatus("Set", setTestStl, setTestFast);
     }
 
 
     public:
 
-        List(int argumentCount, char **arguments)
+        Performance(int argumentCount, char **arguments)
         {
         }
 
         int run()
         {
-            std::cout << "List allocator example" << std::endl;
+            std::cout << "Allocator performance measurement example" << std::endl;
             std::cout << "Version: 1.0" << std::endl << std::endl;
 
-            std::cout << "                    Set STL : " << std::fixed << setTest<std::set<int, std::less<int>>>() << " seconds." << std::endl;
-            std::cout << "                   Set Fast : " << std::fixed << setTest<std::set<int, std::less<int>, Moya::Allocator<int, growSize>>>() << " seconds." << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "                    Map STL : " << std::fixed << mapTest<std::map<int, int, std::less<int>>>() << " seconds." << std::endl;
-            std::cout << "                   Map Fast : " << std::fixed << mapTest<std::map<int, int, std::less<int>, Moya::Allocator<int, growSize>>>() << " seconds." << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "          List PushBack STL : " << std::fixed << pushBackTest<std::list<int>>() << " seconds." << std::endl;
-            std::cout << "         List PushBack Fast : " << std::fixed << pushBackTest<std::list<int, Moya::Allocator<int, growSize>>>() << " seconds." << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "         List PushFront STL : " << std::fixed << pushFrontTest<std::list<int>>() << " seconds." << std::endl;
-            std::cout << "        List PushFront Fast : " << std::fixed << pushFrontTest<std::list<int, Moya::Allocator<int, growSize>>>() << " seconds." << std::endl;
-            std::cout << std::endl;
-
-            std::cout << "  ForwardList PushFront STL : " << std::fixed << pushFrontTest<std::forward_list<int>>() << " seconds." << std::endl;
-            std::cout << " ForwardList PushFront Fast : " << std::fixed << pushFrontTest<std::forward_list<int, Moya::Allocator<int, growSize>>>() << " seconds." << std::endl;
-            std::cout << std::endl;
-
+            runTests();
             return 0;
         }
 };
