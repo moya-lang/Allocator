@@ -74,9 +74,8 @@ class MemoryPool
 };
 
 template <class T, std::size_t growSize>
-class Allocator
+class Allocator : private MemoryPool<T, growSize>
 {
-    MemoryPool<T, growSize> memoryPool;
     std::allocator<T> *defaultAllocator = nullptr;
 
     Allocator(Allocator &&allocator);
@@ -125,7 +124,7 @@ class Allocator
             if (n != 1 || hint)
                 throw std::bad_alloc();
 
-            return memoryPool.allocate();
+            return MemoryPool<T, growSize>::allocate();
         }
 
         void deallocate(pointer p, size_type n)
@@ -134,7 +133,7 @@ class Allocator
                 defaultAllocator->deallocate(p, n);
 
             else
-                memoryPool.deallocate(p);
+                MemoryPool<T, growSize>::deallocate(p);
         }
 
         void construct(pointer p, const_reference val)
