@@ -73,7 +73,7 @@ class MemoryPool
         }
 };
 
-template <class T, std::size_t growSize>
+template <class T, std::size_t growSize = 1024>
 class Allocator : private MemoryPool<T, growSize>
 {
     std::allocator<T> *defaultAllocator = nullptr;
