@@ -20,6 +20,7 @@ class PerformanceTimer
 {
     std::chrono::high_resolution_clock::time_point from, to;
 
+
     public:
 
         void start()
