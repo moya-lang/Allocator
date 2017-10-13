@@ -28,9 +28,7 @@ class Allocator : private MemoryPool<T, growSize>
             typedef Allocator<U, growSize> other;
         };
 
-        Allocator()
-        {
-        }
+        Allocator() = default;
 
         template <class U>
         Allocator(const Allocator<U, growSize> &other)
