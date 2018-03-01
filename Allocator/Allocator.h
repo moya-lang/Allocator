@@ -39,7 +39,8 @@ class Allocator : private MemoryPool<T, growSize>
 
         ~Allocator()
         {
-            delete defaultAllocator;
+            if (defaultAllocator)
+                delete defaultAllocator;
         }
 
         pointer allocate(size_type n, std::allocator<void>::const_pointer hint = 0)
