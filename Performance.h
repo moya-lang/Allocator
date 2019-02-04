@@ -47,7 +47,6 @@ class PerformanceTest
 
     protected:
 
-        int size = 0;
         Container container;
 
         std::default_random_engine randomNumberGenerator;
@@ -80,11 +79,13 @@ class PushFrontTest : public PerformanceTest<Container>
 {
     virtual void testIteration(int newSize)
     {
-        while (size < newSize)
-            container.push_front(size++);
+        int size = 0;
+
+	while (size < newSize)
+            this->container.push_front(size++);
 
         for (; size > newSize; size--)
-            container.pop_front();
+            this->container.pop_front();
     }
 };
 
@@ -93,11 +94,13 @@ class PushBackTest : public PerformanceTest<Container>
 {
     virtual void testIteration(int newSize)
     {
+        int size = 0;
+
         while (size < newSize)
-            container.push_back(size++);
+            this->container.push_back(size++);
 
         for (; size > newSize; size--)
-            container.pop_back();
+            this->container.pop_back();
     }
 };
 
@@ -106,11 +109,13 @@ class MapTest : public PerformanceTest<Container>
 {
     virtual void testIteration(int newSize)
     {
+        int size = 0;
+
         while (size < newSize)
-            container.insert(std::pair<char, int>(size++, size));
+            this->container.insert(std::pair<char, int>(size++, size));
 
         while (size > newSize)
-            container.erase(--size);
+            this->container.erase(--size);
     }
 };
 
@@ -119,11 +124,13 @@ class SetTest : public PerformanceTest<Container>
 {
     virtual void testIteration(int newSize)
     {
+        int size = 0;
+
         while (size < newSize)
-            container.insert(size++);
+            this->container.insert(size++);
 
         while (size > newSize)
-            container.erase(--size);
+            this->container.erase(--size);
     }
 };
 
@@ -132,8 +139,9 @@ class Performance
     template <typename StlContainer, typename FastContainer>
     void printTestStatus(const char *name, StlContainer &stlContainer, FastContainer &fastContainer)
     {
-        std::cout << name << " - Default STL Allocator : " << std::fixed << stlContainer.run() << " seconds." << std::endl;
-        std::cout << name << " - Memory Pool Allocator : " << std::fixed << fastContainer.run() << " seconds." << std::endl;
+        std::cout << std::fixed;
+        std::cout << name << " - Default STL Allocator : " << stlContainer.run() << " seconds." << std::endl;
+        std::cout << name << " - Memory Pool Allocator : " << fastContainer.run() << " seconds." << std::endl;
         std::cout << std::endl;
     }
 

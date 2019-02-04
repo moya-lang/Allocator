@@ -1,7 +1,7 @@
-#include ProjectFileName
+#include "Performance.h"
 
 int main(int argc, char **argv)
 {
-    ProjectName project(argc, argv);
+    Performance project(argc, argv);
     return project.run();
 }
