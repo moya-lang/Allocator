@@ -37,15 +37,14 @@ class MemoryPool
     Buffer *firstBuffer = nullptr;
     std::size_t bufferedBlocks = growSize;
 
-    MemoryPool(MemoryPool &&memoryPool) = delete;
-    MemoryPool(const MemoryPool &memoryPool) = delete;
-    MemoryPool &operator =(MemoryPool &&memoryPool) = delete;
-    MemoryPool &operator =(const MemoryPool &memoryPool) = delete;
-
 
     public:
 
         MemoryPool() = default;
+        MemoryPool(MemoryPool &&memoryPool) = delete;
+        MemoryPool(const MemoryPool &memoryPool) = delete;
+        MemoryPool operator =(MemoryPool &&memoryPool) = delete;
+        MemoryPool operator =(const MemoryPool &memoryPool) = delete;
 
         ~MemoryPool()
         {

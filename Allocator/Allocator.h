@@ -10,7 +10,10 @@ namespace Moya {
 template <class T, std::size_t growSize = 1024>
 class Allocator : private MemoryPool<T, growSize>
 {
-    std::allocator<T> *defaultAllocator = nullptr;
+#ifdef _WIN32
+    Allocator *copyAllocator;
+    std::allocator<T> *rebindAllocator = nullptr;
+#endif
 
     public:
 
@@ -28,24 +31,36 @@ class Allocator : private MemoryPool<T, growSize>
             typedef Allocator<U, growSize> other;
         };
 
+#ifdef _WIN32
         Allocator() = default;
+
+        Allocator(Allocator &allocator) :
+            copyAllocator(&allocator)
+        {
+        }
 
         template <class U>
         Allocator(const Allocator<U, growSize> &other)
         {
             if (!std::is_same<T, U>::value)
-                defaultAllocator = new std::allocator<T>();
+                rebindAllocator = new std::allocator<T>();
         }
 
         ~Allocator()
         {
-            delete defaultAllocator;
+            delete rebindAllocator;
         }
+#endif
 
         pointer allocate(size_type n, const void *hint = 0)
         {
-            if (defaultAllocator)
-                return defaultAllocator->allocate(n, hint);
+#ifdef _WIN32
+            if (copyAllocator)
+                return copyAllocator->allocate(n, hint);
+
+            if (rebindAllocator)
+                return rebindAllocator->allocate(n, hint);
+#endif
 
             if (n != 1 || hint)
                 throw std::bad_alloc();
@@ -55,11 +70,19 @@ class Allocator : private MemoryPool<T, growSize>
 
         void deallocate(pointer p, size_type n)
         {
-            if (defaultAllocator)
-                defaultAllocator->deallocate(p, n);
+#ifdef _WIN32
+            if (copyAllocator) {
+                copyAllocator->deallocate(p, n);
+                return;
+            }
 
-            else
-                MemoryPool<T, growSize>::deallocate(p);
+            if (rebindAllocator) {
+                rebindAllocator->deallocate(p, n);
+                return;
+            }
+#endif
+
+            MemoryPool<T, growSize>::deallocate(p);
         }
 
         void construct(pointer p, const_reference val)
