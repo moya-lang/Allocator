@@ -7,8 +7,8 @@ Fast C++11 allocator for STL containers.
 
 Presented solution is a special purpose allocator designed to increase performance of STL containers. This allocator
 is thread safe implementation based on growing memory pool. Released memory blocks are stored for further reuse until
-container is destroyed. When there is no available free block for reuse, a new group of memory blocks is allocated on
-heap and marked as available.
+associated container is destroyed. When there is no available free block for reuse, a memory for the new group of
+blocks is allocated to minimize heap usage.
 
 
 ##  Performance results
@@ -55,18 +55,18 @@ std::list<int, Allocator<int>> list2;
 std::list<int, Allocator<int, 16 * 1024>> list3;
 ```
 
-The object instance `list1` in the example above is using standard STL allocator. To employ memory pool allocator, it
-must be specified in second template parameter of the container, as in case of `list2` object. If the number of
-elements used by list is known, it can be specified in second template parameter of allocator as for `list3` object.
-In third case whole memory for all objects will be allocated once. It implements lazy initialization, so first
-allocation of memory block by container will force to allocate memory resources for all blocks. Just after that, block
-allocation and release have O(1) complexity. When number of allocated memory block exceeds the specified number,
-allocator will perform memory allocation to grow by this size. It happens every time when there is no available memory
-blocks. On memory allocation failure `std::bad_alloc()` exception is thrown.
+The `list1` in the example above is using standard STL allocator. To use memory pool allocator it must be specified
+in the second template parameter of the container as shown in case of `list2` object. If the number of elements used
+by container is known it can be specified in second template parameter of the allocator as for `list3` to reduce heap
+allocations to only one allocation of memory big enough to store all the elements. The algorithm implements lazy
+initialization, and, therefore first call to the block allocation will also allocate the heap memory. Just after that
+block allocation and release have O(1) complexity. Nevertheless, when number of allocated memory block exceeds the
+specified number allocator will perform another heap memory allocation for future use. This happens every time when
+there is no available memory blocks. On the heap memory allocation failure `std::bad_alloc()` exception is thrown.
 
-The above example will work for `std::forward_list` as well. For containers like `std::set` and `std::map` declaration
-is a little bit different. Second template parameter of that container requires to provide less function first, and,
-therefore it shall be used as in the example below:
+The above example will work for `std::forward_list` as well. For containers like `std::set` and `std::map`
+declaration is a little bit different. Second template parameter of that container requires to provide less function
+first, and, therefore it shall be used as in the example below:
 
 ```C++
 std::set<int> set;
@@ -77,12 +77,45 @@ std::set<int, std::less<int>, Allocator<int, 16 * 1024>> set3;
 Whole memory is allocated on heap and will be released when container is destroyed.
 
 
-## Design decisions
+## MSVC support
 
-Allocator implementation uses internally a standard STL allocator. It will be used instead of memory pool, when
-container tries to rebind allocator. By default, when one allocator allocates a memory block, another allocator of
-that type should be able to release it. However, this is not the case for this kind of allocator. As it grows every
-time when needed, it would immediately lead to consume whole memory. Therefore, each container have its own allocator
-with its own memory resources. Once the container is destroyed all associated memory resources are released. For this
-purpose rebind causes to use standard STL allocator in place of memory pool. Additionally copy and move of allocator
-has been blocked.
+Unfortunately since the very first release of the Allocator MS has changed twice their implementation of STL
+allocator support. As the changes are very odd and requires some workarounds whose slows down the allocator I finally
+decided to separate MSVC support from the original code with use of preprocessor.
+
+
+### Workaround to the first MSVC update
+
+In MSVC, when a container with a non-default allocator specified is created the container will do the following:
+
+* Create a X instance of allocator
+* Create a Y instance of the allocator using the rebind constructor
+* Allocate some memory for internal purpose using Y
+* Destroy the Y instance (without releasing the allocated memory)
+
+After initialization the container uses X instance is for block allocation / release.
+Finally, when the container is destroyed it does the following:
+
+* Create a Z instance of the allocator using the rebind constructor
+* By using Z instance release the memory previously allocated with Y instance
+* Destroy the Z instance
+* Destroy the X instance
+
+The memory pool allocator cleans up all the allocated memory when container is destroyed, and, therefore it cannot be
+used in the way MS proposed. To workaround it, when the rebind constructor is used the allocator will use the default
+STL allocator instead to do the above without any consequences.
+
+For this workaround the default STL allocator is used only on container create and destroy so it should not affect
+the performance dramatically.
+
+
+### Workaround to the second MSVC update
+
+In MSVC, when the `std::map` is used an item deletion is even weirder. Block allocation is performed as usualy using
+the X instance from the example above. For item deletion new instance of allocator is created whenever map element is
+removed. The newly created instance is used to delete object previously allocated with X then the new allocator
+instance is destroyed. For example the MSVC implementation of `std::map::clear()` function will create/destroy as
+many allocator instances as map elements are removed.
+
+To workaround this "feature" I found that for this very special case the allocator is created using copy constructor.
+Therefore for this case a pointer to the original (copied) allocator is used.

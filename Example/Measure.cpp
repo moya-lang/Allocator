@@ -54,7 +54,7 @@ class PushFrontTest : public PerformanceTest<Container>
     {
         int size = 0;
 
-	while (size < newSize)
+        while (size < newSize)
             this->container.push_front(size++);
 
         for (; size > newSize; size--)
