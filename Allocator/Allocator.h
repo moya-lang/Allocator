@@ -10,8 +10,6 @@ namespace Moya {
 template <class T, std::size_t growSize = 1024>
 class Allocator : private MemoryPool<T, growSize>
 {
-    std::allocator<T> *defaultAllocator = nullptr;
-
     public:
 
         typedef std::size_t size_type;
@@ -28,25 +26,8 @@ class Allocator : private MemoryPool<T, growSize>
             typedef Allocator<U, growSize> other;
         };
 
-        Allocator() = default;
-
-        template <class U>
-        Allocator(const Allocator<U, growSize> &other)
-        {
-            if (!std::is_same<T, U>::value)
-                defaultAllocator = new std::allocator<T>();
-        }
-
-        ~Allocator()
-        {
-            delete defaultAllocator;
-        }
-
         pointer allocate(size_type n, const void *hint = 0)
         {
-            if (defaultAllocator)
-                return defaultAllocator->allocate(n, hint);
-
             if (n != 1 || hint)
                 throw std::bad_alloc();
 
@@ -55,11 +36,7 @@ class Allocator : private MemoryPool<T, growSize>
 
         void deallocate(pointer p, size_type n)
         {
-            if (defaultAllocator)
-                defaultAllocator->deallocate(p, n);
-
-            else
-                MemoryPool<T, growSize>::deallocate(p);
+            MemoryPool<T, growSize>::deallocate(p);
         }
 
         void construct(pointer p, const_reference val)
