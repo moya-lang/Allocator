@@ -1,6 +1,5 @@
 default, all, measure:
-	mkdir -p Build
-	g++ --std=c++17 -Wall -IAllocator Example/Measure.cpp -O3 -o Build/Measure
+	g++ --std=c++17 -Wall Measure.cpp -O3 -o Measure
 
 clean:
 	$(RM) -rf Build

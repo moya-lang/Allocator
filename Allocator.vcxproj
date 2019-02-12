@@ -142,11 +142,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Example\Measure.cpp" />
+    <ClCompile Include="Measure.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Allocator\Allocator.h" />
-    <ClInclude Include="Allocator\MemoryPool.h" />
+    <ClInclude Include="Allocator.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
