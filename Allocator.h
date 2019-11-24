@@ -83,7 +83,7 @@ template <class T, std::size_t growSize = 1024>
 class Allocator : private MemoryPool<T, growSize>
 {
 #ifdef _WIN32
-    Allocator *copyAllocator;
+    Allocator *copyAllocator = nullptr;
     std::allocator<T> *rebindAllocator = nullptr;
 #endif
 
