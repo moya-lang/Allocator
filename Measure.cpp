@@ -89,7 +89,7 @@ class MapTest : public PerformanceTest<Container>
         size_t size = 0;
 
         for (; size < newSize; size++)
-            this->container.insert(Container::value_type(size, size));
+            this->container.insert(typename Container::value_type(size, size));
 
         while (size > newSize)
             this->container.erase(--size);
