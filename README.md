@@ -79,9 +79,13 @@ Whole memory is allocated on heap and will be released when container is destroy
 
 ## MSVC support
 
-Unfortunately since the very first release of the Allocator MS has changed twice their implementation of STL
-allocator support. As the changes are very odd and requires some workarounds whose slows down the allocator I finally
-decided to separate MSVC support from the original code with use of preprocessor.
+After a recent test under Microsoft Visual Studio Community 2022 all the test passed successfully without any
+extraordinary workarounds. To enable support for older versions of MSVC please define a `ENABLE_OLD_WIN32_SUPPORT`
+constant.
+
+In older versions MS has changed twice their implementation of STL allocator support. The changes were very odd
+and required some workarounds which slows down the allocator. My decision was to separate MSVC support from
+the original code with use of a preprocessor.
 
 
 ### Workaround to the first MSVC update

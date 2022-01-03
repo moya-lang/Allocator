@@ -37,7 +37,6 @@ class MemoryPool
     Buffer *firstBuffer = nullptr;
     std::size_t bufferedBlocks = growSize;
 
-
     public:
 
         MemoryPool() = default;
@@ -82,7 +81,7 @@ class MemoryPool
 template <class T, std::size_t growSize = 1024>
 class Allocator : private MemoryPool<T, growSize>
 {
-#ifdef _WIN32
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
     Allocator *copyAllocator = nullptr;
     std::allocator<T> *rebindAllocator = nullptr;
 #endif
@@ -103,7 +102,7 @@ class Allocator : private MemoryPool<T, growSize>
             typedef Allocator<U, growSize> other;
         };
 
-#ifdef _WIN32
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
         Allocator() = default;
 
         Allocator(Allocator &allocator) :
@@ -126,7 +125,7 @@ class Allocator : private MemoryPool<T, growSize>
 
         pointer allocate(size_type n, const void *hint = 0)
         {
-#ifdef _WIN32
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
             if (copyAllocator)
                 return copyAllocator->allocate(n, hint);
 
@@ -142,7 +141,7 @@ class Allocator : private MemoryPool<T, growSize>
 
         void deallocate(pointer p, size_type n)
         {
-#ifdef _WIN32
+#if defined(_WIN32) && defined(ENABLE_OLD_WIN32_SUPPORT)
             if (copyAllocator) {
                 copyAllocator->deallocate(p, n);
                 return;

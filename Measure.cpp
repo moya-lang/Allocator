@@ -18,14 +18,12 @@ class PerformanceTest
 {
     virtual void testIteration(size_t newSize) = 0;
 
-
     protected:
 
         Container container;
 
         std::default_random_engine randomNumberGenerator;
         std::uniform_int_distribution<size_t> randomNumberDistribution;
-
 
     public:
 
